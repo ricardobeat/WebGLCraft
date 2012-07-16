@@ -22,12 +22,16 @@
       this.lookSpeed = 0.20;
       this.mouseX = 0;
       this.mouseY = 0;
+      this.deltaX = 0;
+      this.deltaY = 0;
       this.lat = 0;
       this.lon = 0;
       this.mouseDragOn = false;
       this.anchorx = null;
       this.anchory = null;
+      this.mouseLocked = false;
       this.defineBindings();
+      this.enablePointerLock();
     }
 
     Controls.prototype.defineBindings = function() {
@@ -46,6 +50,37 @@
       });
     };
 
+    Controls.prototype.enablePointerLock = function() {
+      var _base,
+        _this = this;
+      if ((_base = this.domElement).requestPointerLock == null) {
+        _base.requestPointerLock = this.domElement.webkitRequestPointerLock || this.domElement.mozRequestPointerLock;
+      }
+      return $(document).bind('pointerlockchange mozpointerlockchange webkitpointerlockchange', function() {
+        var d;
+        d = document;
+        _this.mouseLocked = (d.pointerLockElement || d.mozPointerLockElement || d.webkitPointerLockElement) != null;
+        if (_this.mouseLocked) {
+          return _this.showCrosshair();
+        } else {
+          return _this.hideCrosshair();
+        }
+      });
+    };
+
+    Controls.prototype.lockPointer = function() {
+      var _base;
+      return typeof (_base = this.domElement).requestPointerLock === "function" ? _base.requestPointerLock() : void 0;
+    };
+
+    Controls.prototype.showCrosshair = function() {
+      return document.getElementById('cursor').style.display = 'block';
+    };
+
+    Controls.prototype.hideCrosshair = function() {
+      return document.getElementById('cursor').style.display = 'none';
+    };
+
     Controls.prototype.onMouserEnter = function(event) {
       if (!MouseEvent.isLeftButtonDown(event)) return this.onMouseUp(event);
     };
@@ -55,7 +90,7 @@
       if (this.domElement !== document) this.domElement.focus();
       this.anchorx = event.pageX;
       this.anchory = event.pageY;
-      this.setMouse(event);
+      this.setMouse(this.anchorx, this.anchory);
       this.mouseDragOn = true;
       return false;
     };
@@ -65,14 +100,27 @@
       return false;
     };
 
-    Controls.prototype.setMouse = function(event) {
-      this.mouseX = event.pageX;
-      return this.mouseY = event.pageY;
+    Controls.prototype.setMouse = function(x, y) {
+      this.mouseX = x;
+      this.mouseY = y;
+      return this.setDelta(x - this.anchorx, y - this.anchory);
+    };
+
+    Controls.prototype.setDelta = function(x, y) {
+      this.deltaX = x;
+      return this.deltaY = y;
     };
 
     Controls.prototype.onMouseMove = function(event) {
-      if (!this.mouseDragOn) return;
-      this.setMouse(event);
+      var e, x, y;
+      if (this.mouseDragOn) {
+        this.setMouse(event.pageX, event.pageY);
+      } else if (this.mouseLocked) {
+        e = event.originalEvent;
+        x = e.movementX || e.mozMovementX || e.webkitMovementX;
+        y = e.movementY || e.mozMovementY || e.webkitMovementY;
+        this.setDelta(x, y);
+      }
     };
 
     Controls.prototype.halfCircle = Math.PI / 180;
@@ -102,13 +150,26 @@
 
     Controls.prototype.update = function() {
       var max, min;
-      if (!this.mouseDragOn) return;
-      if (this.mouseX === this.anchorx && this.mouseY === this.anchory) return;
+      if (!(this.mouseDragOn || this.mouseLocked)) return;
+      if (this.mouseDragOn && this.mouseX === this.anchorx && this.mouseY === this.anchory) {
+        return;
+      }
       max = Math.max, min = Math.min;
-      this.lon += (this.mouseX - this.anchorx) * this.lookSpeed;
-      this.lat -= (this.mouseY - this.anchory) * this.lookSpeed;
-      this.anchorx = this.mouseX;
-      this.anchory = this.mouseY;
+      if (this.mouseLocked) {
+        if (this.deltaX === this.previousDeltaX && this.deltaY === this.previousDeltaY) {
+          return;
+        }
+        this.previousDeltaX = this.deltaX;
+        this.previousDeltaY = this.deltaY;
+        this.anchorx = window.innerWidth / 2;
+        this.anchory = window.innerHeight / 2;
+      } else if (this.mouseDragOn) {
+        if (this.mouseX === this.anchorx && this.mouseY === this.anchory) return;
+        this.anchorx = this.mouseX;
+        this.anchory = this.mouseY;
+      }
+      this.lon += this.deltaX * this.lookSpeed;
+      this.lat -= this.deltaY * this.lookSpeed;
       this.lat = max(-85, min(85, this.lat));
       this.updateLook();
     };

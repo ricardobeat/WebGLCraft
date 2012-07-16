@@ -1,6 +1,6 @@
 (function() {
-  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, Instructions, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, vec;
-  var __slice = Array.prototype.slice;
+  var AmbientLight, BlockSelection, Blocks, ClampToEdgeWrapping, Clock, CollisionHelper, CubeGeometry, CubeSize, DirectionalLight, Floor, Game, Grid, Instructions, LinearMipMapLinearFilter, Matrix4, Mesh, MeshLambertMaterial, MeshNormalMaterial, NearestFilter, Object3D, PerspectiveCamera, PlaneGeometry, Player, PointLight, Projector, Ray, RepeatWrapping, Scene, Texture, TextureHelper, UVMapping, Vector2, Vector3, WebGLRenderer, vec,
+    __slice = Array.prototype.slice;
 
   Object3D = THREE.Object3D, Matrix4 = THREE.Matrix4, Scene = THREE.Scene, Mesh = THREE.Mesh, WebGLRenderer = THREE.WebGLRenderer, PerspectiveCamera = THREE.PerspectiveCamera;
 
@@ -390,8 +390,8 @@
     };
 
     Game.prototype.populateWorld = function() {
-      var data, height, i, j, middle, middlePos, playerHeight;
-      var _this = this;
+      var data, height, i, j, middle, middlePos, playerHeight,
+        _this = this;
       middle = this.grid.size / 2;
       data = this.generateHeight();
       playerHeight = null;
@@ -453,8 +453,8 @@
     };
 
     Game.prototype.defineControls = function() {
-      var bindit, key, _i, _len, _ref;
-      var _this = this;
+      var bindit, key, _i, _len, _ref,
+        _this = this;
       bindit = function(key) {
         $(document).bind('keydown', key, function() {
           return _this.keysDown[key] = true;
@@ -621,8 +621,8 @@
     };
 
     Game.prototype.start = function() {
-      var animate;
-      var _this = this;
+      var animate,
+        _this = this;
       animate = function() {
         if (!_this.pause) _this.tick();
         return requestAnimationFrame(animate, _this.renderer.domElement);
@@ -786,8 +786,8 @@
     };
 
     BlockSelection.prototype.insert = function() {
-      var b, blockList, domElement;
-      var _this = this;
+      var b, blockList, domElement,
+        _this = this;
       blockList = (function() {
         var _i, _len, _results;
         _results = [];
@@ -895,18 +895,21 @@
   })();
 
   window.init_web_app = function() {
-    var startGame;
+    var game, startGame;
+    game = null;
     $("#blocks").hide();
     $('#instructions').hide();
     $(document).bind("contextmenu", function() {
       return false;
     });
+    $(document).bind("keydown", 'c', function() {
+      return game != null ? game.controls.lockPointer() : void 0;
+    });
     if (!Detector.webgl) return Detector.addGetWebGLMessage();
     startGame = function() {
-      var game;
       game = new Game();
       new BlockSelection(game).insert();
-      return game.start();
+      game.start();
     };
     return new Instructions(startGame).insert();
   };
